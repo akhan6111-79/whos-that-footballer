@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Who's That Footballer?</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#071b14;color:white;font-family:Arial,sans-serif;text-align:center;padding:20px}
+h1{color:#67f59b;font-size:30px}
+.card{max-width:460px;margin:20px auto;background:#123326;padding:22px;border-radius:20px}
+button,select{width:100%;padding:15px;margin:7px 0;border:0;border-radius:12px;font-size:17px;font-weight:bold}
+button{background:#67f59b;color:#071b14;cursor:pointer}
+button.answer{background:#24543e;color:white}
+button:disabled{opacity:.6}
+.small{color:#b7d9c7;font-size:14px}
+#portrait{font-size:100px;padding:30px;background:#1b4934;border-radius:15px;margin:15px 0}
+#status{min-height:28px;font-weight:bold}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<h1>⚽ WHO'S THAT<br>FOOTBALLER?</h1>
+<p class="small">The ultimate football guessing game</p>
+
+<div class="card" id="setup">
+<h2>Choose your game</h2>
+<button onclick="startGame(1)">👤 Solo Game</button>
+<button onclick="startGame(2)">👥 2 Player Pass & Play</button>
+<p class="small">Choose your number of questions</p>
+<select id="count">
+<option value="5">5 Questions</option>
+<option value="10" selected>10 Questions</option>
+</select>
+</div>
+
+<div class="card hidden" id="game">
+<h3 id="turn"></h3>
+<p id="progress"></p>
+<div id="portrait">👕⚽</div>
+<h2>Who's the footballer?</h2>
+<div id="answers"></div>
+<p id="status"></p>
+<p id="score"></p>
+<button id="next" class="hidden" onclick="nextQuestion()">Next Question ➜</button>
+</div>
+
+<div class="card hidden" id="result">
+<h2>🏆 FULL TIME!</h2>
+<h3 id="winner"></h3>
+<div id="finalScores"></div>
+<button onclick="location.reload()">Play Again</button>
+</div>
+
+<script>
+const players = [
+{name:"David Beckham",club:"Manchester United / Real Madrid",nation:"England",era:"1990s–2000s"},
+{name:"Cristiano Ronaldo",club:"Manchester United / Real Madrid",nation:"Portugal",era:"2000s–present"},
+{name:"Lionel Messi",club:"Barcelona / Inter Miami",nation:"Argentina",era:"2000s–present"},
+{name:"Thierry Henry",club:"Arsenal / Barcelona",nation:"France",era:"1990s–2010s"},
+{name:"Wayne Rooney",club:"Manchester United / Everton",nation:"England",era:"2000s–2010s"},
+{name:"Steven Gerrard",club:"Liverpool",nation:"England",era:"1990s–2010s"},
+{name:"Didier Drogba",club:"Chelsea",nation:"Ivory Coast",era:"2000s–2010s"},
+{name:"Zlatan Ibrahimović",club:"PSG / AC Milan",nation:"Sweden",era:"2000s–2020s"},
+{name:"Kylian Mbappé",club:"PSG / Real Madrid",nation:"France",era:"2010s–present"},
+{name:"Mohamed Salah",club:"Liverpool",nation:"Egypt",era:"2010s–present"},
+{name:"Frank Lampard",club:"Chelsea",nation:"England",era:"1990s–2010s"},
+{name:"Ronaldinho",club:"Barcelona / AC Milan",nation:"Brazil",era:"2000s–2010s"}
+];
+
+let questions=[],index=0,scores=[0,0],playersCount=1,answered=false;
+
+function startGame(number){
+ playersCount=number;
+ scores=[0,0];
+ index=0;
+ let count=Number(document.getElementById("count").value);
+ questions=[...players].sort(()=>Math.random()-.5).slice(0,count);
+ document.getElementById("setup").classList.add("hidden");
+ document.getElementById("result").classList.add("hidden");
+ document.getElementById("game").classList.remove("hidden");
+ showQuestion();
+}
+
+function showQuestion(){
+ answered=false;
+ let p=questions[index];
+ document.getElementById("turn").textContent=
+ playersCount===2?"Player "+(index%2+1)+"'s turn":"Your turn!";
+ document.getElementById("progress").textContent=
+ "Question "+(index+1)+" of "+questions.length;
+ document.getElementById("portrait").textContent="👕⚽";
+ document.getElementById("status").textContent="";
+ document.getElementById("next").classList.add("hidden");
+ document.getElementById("score").textContent=
+ "Player 1: "+scores[0]+" points"+
+ (playersCount===2?" | Player 2: "+scores[1]+" points":"");
+
+ let choices=[p,...players.filter(x=>x.name!==p.name)
+ .sort(()=>Math.random()-.5).slice(0,3)]
+ .sort(()=>Math.random()-.5);
+
+ let area=document.getElementById("answers");
+ area.innerHTML="";
+ choices.forEach(choice=>{
+  let b=document.createElement("button");
+  b.className="answer";
+  b.textContent=choice.name;
+  b.onclick=()=>answer(choice.name,p.name);
+  area.appendChild(b);
+ });
+}
+
+function answer(selected,correct){
+ if(answered)return;
+ answered=true;
+ let player=playersCount===2?index%2:0;
+ let right=selected===correct;
+ if(right)scores[player]+=10;
+ document.getElementById("status").textContent=
+ right?"✅ CORRECT! +10 POINTS":"❌ Not quite! It was "+correct;
+ document.getElementById("status").style.color=right?"#67f59b":"#ffaaaa";
+ document.querySelectorAll(".answer").forEach(b=>b.disabled=true);
+ document.getElementById("score").textContent=
+ "Player 1: "+scores[0]+" points"+
+ (playersCount===2?" | Player 2: "+scores[1]+" points":"");
+ document.getElementById("next").textContent=
+ index===questions.length-1?"See Final Scores 🏆":"Next Question ➜";
+ document.getElementById("next").classList.remove("hidden");
+}
+
+function nextQuestion(){
+ index++;
+ if(index>=questions.length){finishGame();return;}
+ showQuestion();
+}
+
+function finishGame(){
+ document.getElementById("game").classList.add("hidden");
+ document.getElementById("result").classList.remove("hidden");
+ document.getElementById("finalScores").innerHTML=
+ "<h3>Player 1: "+scores[0]+" points</h3>"+
+ (playersCount===2?"<h3>Player 2: "+scores[1]+" points</h3>":"");
+ document.getElementById("winner").textContent=
+ playersCount===1?"Well played!":
+ scores[0]===scores[1]?"It's a draw!":
+ scores[0]>scores[1]?"Player 1 wins! 🏆":"Player 2 wins! 🏆";
+}
+</script>
+</body>
+</html>
